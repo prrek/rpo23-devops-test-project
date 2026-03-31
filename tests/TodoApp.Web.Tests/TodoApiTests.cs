@@ -83,4 +83,16 @@ public class TodoApiTests : IClassFixture<CustomWebApplicationFactory<Program>>
     }
 
     public record LoginResponse(string Token);
+
+    [Fact]
+public async Task Register_ReturnsOk_WhenPasswordIsEmpty()
+{
+    // Отправляем запрос с пустым паролем
+    var response = await _client.PostAsJsonAsync("/api/v1/auth/register",
+        new RegisterRequest("test@example.com", ""));
+    
+    // НЕПРАВИЛЬНО: ожидаем OK (200), хотя сервер должен выдать ошибку
+    response.StatusCode.Should().Be(HttpStatusCode.OK);
+}
+
 }
