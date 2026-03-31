@@ -83,4 +83,16 @@ public class TodoApiTests : IClassFixture<CustomWebApplicationFactory<Program>>
     }
 
     public record LoginResponse(string Token);
+    
+    [Fact]
+public async Task Register_ReturnsBadRequest_WhenPasswordIsEmpty()
+{
+    var response = await _client.PostAsJsonAsync(
+        "/api/v1/auth/register",
+        new RegisterRequest("test@example.com", ""));
+    
+    // ПРАВИЛЬНО: ожидаем ошибку (400 BadRequest)
+    response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+}
+
 }
