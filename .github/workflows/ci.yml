@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -19,6 +18,9 @@ jobs:
 
       - name: Restore
         run: dotnet restore
+
+      - env:
+        JwtSettings__Key: ${{ secrets.JWT_KEY }}
 
       - name: Build
         run: dotnet build --no-restore --configuration Release
@@ -39,3 +41,11 @@ jobs:
 
       - name: Test
         run: dotnet test --configuration Release
+  
+  docker-compose:
+    steps:
+      - name: Run Docker Compose
+        run: docker compose up -d
+        env:
+          JWT_KEY: ${{ secrets.JWT_KEY }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}

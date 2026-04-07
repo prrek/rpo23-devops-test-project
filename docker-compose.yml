@@ -27,7 +27,7 @@ services:
     environment:
   
       ConnectionStrings__DefaultConnection: >-
-        Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};
+        Host=db;Port=${POSTGRES_PORT};
         Database=${POSTGRES_DB};Username=${POSTGRES_USER};
         Password=${POSTGRES_PASSWORD}
 
