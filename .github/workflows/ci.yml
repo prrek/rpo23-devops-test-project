@@ -19,9 +19,6 @@ jobs:
       - name: Restore
         run: dotnet restore
 
-      - env:
-        JwtSettings__Key: ${{ secrets.JWT_KEY }}
-
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
@@ -41,6 +38,8 @@ jobs:
 
       - name: Test
         run: dotnet test --configuration Release
+        env:
+          JwtSettings__Key: ${{ secrets.JWT_KEY }}
   
   docker-compose:
     runs-on: ubuntu-latest
