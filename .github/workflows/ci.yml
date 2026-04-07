@@ -40,12 +40,3 @@ jobs:
         run: dotnet test --configuration Release
         env:
           JwtSettings__Key: ${{ secrets.JWT_KEY }}
-  
-  docker-compose:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Docker Compose
-        run: docker compose up -d
-        env:
-          JWT_KEY: ${{ secrets.JWT_KEY }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
