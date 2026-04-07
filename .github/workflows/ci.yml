@@ -43,6 +43,7 @@ jobs:
         run: dotnet test --configuration Release
   
   docker-compose:
+    runs-on: ubuntu-latest
     steps:
       - name: Run Docker Compose
         run: docker compose up -d
