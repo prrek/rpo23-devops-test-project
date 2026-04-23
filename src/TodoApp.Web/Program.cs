@@ -5,6 +5,12 @@ using Serilog;
 using TodoApp.Application;
 using TodoApp.Infrastructure;
 
+// === OpenTelemetry usings ===
+using OpenTelemetry.Resources;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
+// ============================
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
@@ -15,6 +21,26 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+
+// === OpenTelemetry Configuration ===
+var serviceName = builder.Configuration["OpenTelemetry:ServiceName"] ?? "TodoApp.Web";
+var otlpEndpoint = builder.Configuration["OpenTelemetry:Otlp:Endpoint"] ?? "http://tempo:4317";
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(serviceName))
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddPrometheusExporter())
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter(options =>
+        {
+            options.Endpoint = new Uri(otlpEndpoint);
+        }));
+// ===================================
 
 // Add services to the container
 builder.Services.AddApplication();
@@ -87,12 +113,16 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// === Expose metrics endpoint for Prometheus ===
+app.MapPrometheusScrapingEndpoint("/metrics");
+// ==============================================
+
 // Always enable Swagger for this MVP/Educational project
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "TodoApp API V1");
-    c.RoutePrefix = "swagger"; // Access at http://localhost:5000/swagger
+    c.RoutePrefix = "swagger";
 });
 
 app.UseSerilogRequestLogging();

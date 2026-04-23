@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-
   db:
     image: postgres:15-alpine
     restart: unless-stopped
@@ -23,23 +22,85 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "5000:8080"
     environment:
-  
+      OpenTelemetry__ServiceName: TodoApp.Web
+      OpenTelemetry__Otlp__Endpoint: http://tempo:4317
       ConnectionStrings__DefaultConnection: >-
         Host=db;Port=${POSTGRES_PORT};
         Database=${POSTGRES_DB};Username=${POSTGRES_USER};
         Password=${POSTGRES_PASSWORD}
-
       JwtSettings__Key:                  ${JWT_KEY}
       JwtSettings__Issuer:               ${JWT_ISSUER}
       JwtSettings__Audience:             ${JWT_AUDIENCE}
       JwtSettings__ExpirationInMinutes:  ${JWT_EXPIRATION_MINUTES}
-
       ASPNETCORE_URLS: http://+:8080
     depends_on:
       db:
         condition: service_healthy
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    depends_on:
+      - app
+
+  loki:
+    image: grafana/loki:3.1.1
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./observability/loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    depends_on:
+      - app
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    volumes:
+      - ./observability/promtail/promtail-config.yml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+  tempo:
+    image: grafana/tempo:2.6.1
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+    volumes:
+      - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml
+      - tempo_data:/tmp/tempo
+    command: -config.file=/etc/tempo/tempo.yml
+    depends_on:
+      - app
+
+  grafana:
+    image: grafana/grafana-oss:11.1.4
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./observability/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
 volumes:
   postgres_data:
+  prometheus_data:
+  loki_data:
+  tempo_data:
+  grafana_data:
