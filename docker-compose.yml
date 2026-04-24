@@ -78,7 +78,7 @@ services:
       - "4317:4317"
     volumes:
       - ./observability/tempo/tempo.yml:/etc/tempo/tempo.yml
-      - tempo_data:/tmp/tempo
+      - tempo_data:/tmp/tempogit 
     command: -config.file=/etc/tempo/tempo.yml
     depends_on:
       - app
