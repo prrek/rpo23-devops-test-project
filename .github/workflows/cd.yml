@@ -1,0 +1,31 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Environment File
+        run: |
+          echo "DB_USER=${{ secrets.DB_USER }}" > .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          # Добавьте другие переменные при необходимости:
+          # echo "API_KEY=${{ secrets.API_KEY }}" >> .env
+
+      - name: Deploy application
+        run: |
+          docker compose down
+          docker compose up -d --build
+
+      - name: Verify deployment
+        run: |
+          sleep 10
+          docker compose ps
